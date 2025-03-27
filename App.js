@@ -218,11 +218,13 @@ const VersionPicker = ({ versions }) => {
     return (
     
       <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>WikCar</Text>
       </View>
       
       {/* Tela de detalhes do criador */}
+      
       {selectedCreator ? (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.creatorCardDetails}>
@@ -415,7 +417,9 @@ const VersionPicker = ({ versions }) => {
           <VersionPicker versions={selectedCar.version} />
         </ScrollView>
       )}
+      </ScrollView>
     </SafeAreaView>
+    
     );
   };
   
@@ -481,7 +485,8 @@ const VersionPicker = ({ versions }) => {
     carouselContainer: {
       paddingHorizontal: 10,
       paddingBottom: 10,
-    },
+      height: 200
+      },
     carouselCard: {
       width: 200,
       marginRight: 15,
@@ -493,6 +498,7 @@ const VersionPicker = ({ versions }) => {
       shadowRadius: 4,
       elevation: 3,
       overflow: 'hidden',
+      
     },
     carouselImage: {
       width: '100%',
@@ -513,6 +519,7 @@ const VersionPicker = ({ versions }) => {
     listContainer: {
       paddingHorizontal: 10,
       paddingBottom: 20,
+    
     },
     carCard: {
       flexDirection: 'row',
@@ -740,13 +747,14 @@ const VersionPicker = ({ versions }) => {
       shadowRadius: 4,
       elevation: 5,
     },
+    
     headerTitle: {
-      fontSize: 25,              // Tamanho maior
-      fontWeight: '800',         // Negrito mais forte
-      justifyContent: 'center',
-      alignItems: 'center',
-      display: 'flex'
+      fontSize: 25,
+      fontWeight: '800',
+      textAlign: 'center', // Isso centraliza o texto dentro do próprio componente
+      marginTop: '20  '
     },
+    
     filterPickerContainer: {
       margin: 15,
       backgroundColor: '#f8f9fa',
