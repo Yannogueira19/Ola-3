@@ -2,10 +2,13 @@ import React, { useState, useRef } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
-import { Poppins_400Regular } from '@expo-google-fonts/poppins';
+import { useFonts, Poppins_400Regular } from '@expo-google-fonts/poppins';
 
 
 const App = () => {
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular
+  });
   const [selectedCar, setSelectedCar] = useState(null);
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [yearRange, setYearRange] = useState([1978, 2012]);
