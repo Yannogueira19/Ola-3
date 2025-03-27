@@ -1,9 +1,18 @@
-  import React, { useState } from 'react';
-  import { SafeAreaView, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { SafeAreaView, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import Slider from '@react-native-community/slider';
+import {Picker} from '@react-native-picker/picker';
 
-  const App = () => {
-    const [selectedCar, setSelectedCar] = useState(null);
-    const [selectedCreator, setSelectedCreator] = useState(null);
+
+const App = () => {
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [selectedCreator, setSelectedCreator] = useState(null);
+  const [yearRange, setYearRange] = useState([1978, 2012]);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const scrollRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+
+  
 
     const cars = [
       {
@@ -74,227 +83,525 @@
       }
     ];
 
-
-    // Função para lidar com o clique no botão de detalhes do carro
+    //Filtra os carros com base no intervalo de anos e filtros selecionado
+    const filteredCars = cars.filter(car => {
+      const yearMatch = car.year >= yearRange[0] && car.year <= yearRange[1];
+      
+      if (selectedFilter === 'all') return yearMatch;
+      if (selectedFilter === 'manufacturer') return yearMatch && car.manufacturer === filterValue;
+      if (selectedFilter === 'transmission') return yearMatch && car.transmission === filterValue;
+      if (selectedFilter === 'fuel') return yearMatch && car.fuel === filterValue;
+      if (selectedFilter === 'color') return yearMatch && car.color.toLowerCase().includes(filterValue.toLowerCase());
+      
+      return yearMatch;
+    });
+  
+    //manipulador de eventos
     const handleDetailsPress = (car) => {
+      setLoading(true);
       setSelectedCar(car);
+      setLoading(false);
     };
-
-
-    // Função para voltar à lista de carros
+  
     const handleBackPress = () => {
       setSelectedCar(null);
     };
-
-
-    // Função para lidar com o clique no card do criador
+  
     const handleCreatorPress = (creator) => {
       setSelectedCreator(creator);
     };
+  
 
-    return (
+ // Componente de Picker para Filtros
+ const AdvancedFilterPicker = () => {
+  return (
+    <View style={styles.filterPickerContainer}>
+      <Picker
+        selectedValue={selectedFilter}
+        onValueChange={(itemValue) => {
+          setSelectedFilter(itemValue);
+          setFilterValue('');
+        }}
+        style={styles.picker}
+        dropdownIconColor="#3498db"
+      >
+        <Picker.Item label="Todos os carros" value="all" />
+        <Picker.Item label="Por Fabricante" value="manufacturer" />
+        <Picker.Item label="Por Tipo de Câmbio" value="transmission" />
+        <Picker.Item label="Por Combustível" value="fuel" />
+        <Picker.Item label="Por Cor" value="color" />
+      </Picker>
+
+      {selectedFilter === 'manufacturer' && (
+        <Picker
+          selectedValue={filterValue}
+          onValueChange={setFilterValue}
+          style={styles.subPicker}
+        >
+          <Picker.Item label="Selecione o fabricante" value="" />
+          <Picker.Item label="Volkswagen" value="volkswagen" />
+          <Picker.Item label="Fiat" value="fiat" />
+        </Picker>
+      )}
+
+      {selectedFilter === 'transmission' && (
+        <Picker
+          selectedValue={filterValue}
+          onValueChange={setFilterValue}
+          style={styles.subPicker}
+        >
+          <Picker.Item label="Selecione o câmbio" value="" />
+          <Picker.Item label="Manual" value="manual" />
+        </Picker>
+      )}
+
+      {selectedFilter === 'fuel' && (
+        <Picker
+          selectedValue={filterValue}
+          onValueChange={setFilterValue}
+          style={styles.subPicker}
+        >
+          <Picker.Item label="Selecione o combustível" value="" />
+          <Picker.Item label="Gasolina" value="gasolina" />
+          <Picker.Item label="Flex" value="flex" />
+        </Picker>
+      )}
+    </View>
+  );
+};
+
+// Componente de Picker para Versões
+const VersionPicker = ({ versions }) => {
+  const [selectedVersion, setSelectedVersion] = useState(versions[0]);
+
+  return (
+    <View style={styles.versionPickerContainer}>
+      <Text style={styles.versionPickerLabel}>Selecione uma versão:</Text>
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={selectedVersion}
+          onValueChange={setSelectedVersion}
+          style={styles.versionPicker}
+          dropdownIconColor="#3498db"
+        >
+          {versions.map((version, index) => (
+            <Picker.Item 
+              key={index} 
+              label={`${version.name} (${version.year})`} 
+              value={version} 
+            />
+          ))}
+        </Picker>
+      </View>
       
-      <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.selectedVersionContainer}>
+        <Image 
+          source={{ uri: selectedVersion.image }} 
+          style={styles.selectedVersionImage}
+        />
+        <Text style={styles.selectedVersionName}>{selectedVersion.name}</Text>
+        <Text style={styles.selectedVersionYear}>{selectedVersion.year}</Text>
+      </View>
+    </View>
+  );
+};
+
+    //Mostra um indicador de carregamento se o estado loading for true
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3498db" />
+        </View>
+      );
+    }
+  
+    return (
+    
+      <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>WikCar</Text>
+      </View>
+      
+      {/* Tela de detalhes do criador */}
       {selectedCreator ? (
-        // Exibe os detalhes do criador selecionado
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.creatorCardDetails}>
             <TouchableOpacity style={styles.backButton} onPress={() => setSelectedCreator(null)}>
               <Text style={styles.backButtonText}>Voltar</Text>
             </TouchableOpacity>
-            <Image source={{ uri: selectedCreator.image }} style={styles.creatorImageDetails} />
+            <Image 
+              source={{ uri: selectedCreator.image }} 
+              style={styles.creatorImageDetails}
+              onError={() => console.log('Erro ao carregar imagem')}
+            />
             <Text style={styles.creatorName}>{selectedCreator.name}</Text>
             <Text style={styles.creatorResume}>{selectedCreator.Resume}</Text>
-            <Text style={styles.creatortext}>{selectedCreator.text}</Text>
-    
-            {/* Bloco de informações adicionais sobre o criador */}
+            <Text style={styles.creatorText}>{selectedCreator.text}</Text>
+            
             {selectedCreator.gender ? (
               <View style={styles.infoBlock}>
                 <Text style={styles.infoText}>Sexo: {selectedCreator.gender}</Text>
                 <Text style={styles.infoText}>Data de Nascimento: {selectedCreator.birthDate}</Text>
                 <Text style={styles.infoText}>Local de Nascimento: {selectedCreator.birthPlace}</Text>
               </View>
-            ) : (
-              <View style={styles.infoBlock}>
-                <Text style={styles.infoText}>Fabricante: {selectedCreator.name}</Text>
-                <Text style={styles.infoText}>Fundada: {selectedCreator.date}</Text>
-                <Text style={styles.infoText}>Origem: {selectedCreator.origin}</Text>
-              </View>
+              ) : (
+                <View style={styles.infoBlock}>
+                  <Text style={styles.infoText}>Fabricante: {selectedCreator.name}</Text>
+                  <Text style={styles.infoText}>Fundada: {selectedCreator.date}</Text>
+                  <Text style={styles.infoText}>Origem: {selectedCreator.origin}</Text>
+                </View>
             )}
-    
-          {/* Container para os cards */}
-
-
-          <View style={styles.creatorsContainer}>
+            
+            <View style={styles.creatorsContainer}>
               <Text style={styles.creatorsTitle}>Recomendados: </Text>
               {selectedCar.creators.map((creator, index) => (
-                 <View style={styles.creatorCard2}>
-                    <Image source={{ uri: creator.secondimage }} style={styles.creatorImage} />
-                    <View style={styles.creatorInfo}>
-                      <Text style={styles.creatorName}>{creator.secondname}</Text>
-                      <Text style={styles.creatorRole}>{creator.secondrole}</Text>
-                    </View>
-                  </View>   
+                <View style={styles.creatorCard2} key={index}>
+                  <Image source={{ uri: creator.secondimage }} style={styles.creatorImage} />
+                  <View style={styles.creatorInfo}>
+                    <Text style={styles.creatorName}>{creator.secondname}</Text>
+                    <Text style={styles.creatorRole}>{creator.secondrole}</Text>
+                  </View>
+                </View>   
               ))}
             </View>
-      
-      </View>
-    </ScrollView>
+          </View>
+        </ScrollView>
       ) : !selectedCar ? (
+        // Tela principal com lista de carros 
+        <View style={styles.mainContainer}>
+          {/* Filtro por Ano */}
+          <View style={styles.filterContainer}>
+            <Text style={styles.filterTitle}>Filtrar por Ano: {yearRange[0]} - {yearRange[1]}</Text>
+            <View style={styles.sliderWrapper}>
+              <Text style={styles.sliderLabel}>Mínimo: {yearRange[0]}</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={1978}
+                maximumValue={2012}
+                step={1}
+                value={yearRange[0]}
+                onValueChange={(value) => setYearRange([value, yearRange[1]])}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#d3d3d3"
+                thumbTintColor="#3498db"
+              />
+            </View>
+            <View style={styles.sliderWrapper}>
+              <Text style={styles.sliderLabel}>Máximo: {yearRange[1]}</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={1978}
+                maximumValue={2012}
+                step={1}
+                value={yearRange[1]}
+                onValueChange={(value) => setYearRange([yearRange[0], value])}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#d3d3d3"
+                thumbTintColor="#3498db"
+              />
+            </View>
+          </View>
 
-          // Exibe a lista de carros
-          <ScrollView>
-            {cars.map((car) => (
-              <TouchableOpacity key={car.id} onPress={() => handleDetailsPress(car)}>
-                <View style={styles.carCard}>
-                  <Image source={{ uri: car.image }} style={styles.carImage} />
-                  <Text style={styles.carName}>{car.name}</Text>
-                  <Text>Ano: {car.year}</Text>
-                  <Text>Cor: {car.color}</Text>
-                  <TouchableOpacity
-                    style={styles.detailsButton}
-                    onPress={() => handleDetailsPress(car)}
-                  >
-                    <Text style={styles.detailsButtonText}>Detalhes</Text>
-                  </TouchableOpacity>
+          {/* Filtros Avançados */}
+          <AdvancedFilterPicker />
+
+          {/* Carrossel Horizontal */}
+          <Text style={styles.sectionTitle}>Destaques</Text>
+          <ScrollView
+            horizontal
+            ref={scrollRef}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContainer}
+          >
+            {filteredCars.map((car) => (
+              <TouchableOpacity 
+                key={car.id} 
+                style={styles.carouselCard}
+                onPress={() => handleDetailsPress(car)}
+              >
+                <Image 
+                  source={{ uri: car.image }} 
+                  style={styles.carouselImage}
+                  resizeMode="cover"
+                  onError={() => console.log('Erro ao carregar imagem do carro')}
+                />
+                <View style={styles.carouselTextContainer}>
+                  <Text style={styles.carouselTitle}>{car.name}</Text>
+                  <Text style={styles.carouselSubtitle}>{car.year} • {car.color}</Text>
                 </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
-        ) : (
-          
-          // Exibe os detalhes do carro selecionado
-          <ScrollView>
-            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-              <Text style={styles.backButtonText}>Voltar</Text>
-            </TouchableOpacity>
 
-            <View style={styles.carDetailsContainer}>
-              <Image source={{ uri: selectedCar.image }} style={styles.carDetailsImage} />
-              <Text style={styles.carDetailsName}>{selectedCar.name}</Text>
-
-              <View style={styles.descriptionContainer}>
-                <Text style={styles.carDetailsDescription}>{selectedCar.description}</Text>
-              </View>
-
-              <View style={styles.detailsContainer}>
-                <Text style={styles.carDetailsText}>Ano: {selectedCar.year}</Text>
-                <Text style={styles.carDetailsText}>Cor: {selectedCar.color}</Text>
-                <Text style={styles.carDetailsText}>Valor: {selectedCar.value}</Text>
-                <Text style={styles.carDetailsText}>KM: {selectedCar.KM}</Text>
-                <Text style={styles.carDetailsText}>Câmbio: {selectedCar.exchange}</Text>
-                <Text style={styles.carDetailsText}>Combustível: {selectedCar.fuel}</Text>
-              </View>
-            </View>
-
-  {/* Lista de criadores do carro */}
-            <View style={styles.creatorsContainer}>
-              <Text style={styles.creatorsTitle}>Criadores:</Text>
-              {selectedCar.creators.map((creator, index) => (
-                <TouchableOpacity key={index} onPress={() => handleCreatorPress(creator)}>
-                  <View style={styles.creatorCard}>
-                    <Image source={{ uri: creator.image }} style={styles.creatorImage} />
-                    <View style={styles.creatorInfo}>
-                      <Text style={styles.creatorName}>{creator.name}</Text>
-                      <Text style={styles.creatorRole}>{creator.role}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-  {/* Lista de versões do carro */}
-            <View style={styles.creatorsContainer}>
-              <Text style={styles.creatorsTitle}>Versões:</Text>
-              {selectedCar.version.map((version, index) => (
-                <View key={index} style={styles.creatorCard}>
-                  <Image source={{ uri: version.image }} style={styles.creatorImage} />
-                  <View style={styles.creatorInfo}>
-                    <Text style={styles.creatorName}>{version.name}</Text>
-                    <Text style={styles.creatorYear}>{version.year}</Text>
-                  </View>
+          {/* Lista Vertical completa de carros*/}
+          <Text style={styles.sectionTitle}>Todos os Modelos</Text>
+          <ScrollView contentContainerStyle={styles.listContainer}>
+            {filteredCars.map((car) => (
+              <TouchableOpacity 
+                key={car.id} 
+                style={styles.carCard}
+                onPress={() => handleDetailsPress(car)}
+              >
+                <Image 
+                  source={{ uri: car.image }} 
+                  style={styles.carImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.carInfo}>
+                  <Text style={styles.carName}>{car.name}</Text>
+                  <Text style={styles.carText}>Ano: {car.year}</Text>
+                  <Text style={styles.carText}>Cor: {car.color}</Text>
                 </View>
-              ))}
-            </View>
+                <TouchableOpacity
+                  style={styles.detailsButton}
+                  onPress={() => handleDetailsPress(car)}
+                >
+                  <Text style={styles.detailsButtonText}>Detalhes</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
-        )}
-      </SafeAreaView>
+        </View>
+      ) : (
+        // Tela de detalhes do carro
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+            <Text style={styles.backButtonText}>Voltar</Text>
+          </TouchableOpacity>
+
+          <View style={styles.carDetailsContainer}>
+            <Image 
+              source={{ uri: selectedCar.image }} 
+              style={styles.carDetailsImage}
+              resizeMode="cover"
+            />
+            <Text style={styles.carDetailsName}>{selectedCar.name}</Text>
+
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.carDetailsDescription}>{selectedCar.description}</Text>
+            </View>
+
+            <View style={styles.detailsContainer}>
+              <Text style={styles.detailText}>Ano: {selectedCar.year}</Text>
+              <Text style={styles.detailText}>Cor: {selectedCar.color}</Text>
+              <Text style={styles.detailText}>Valor: {selectedCar.value}</Text>
+              <Text style={styles.detailText}>KM: {selectedCar.KM}</Text>
+              <Text style={styles.detailText}>Câmbio: {selectedCar.exchange}</Text>
+              <Text style={styles.detailText}>Combustível: {selectedCar.fuel}</Text>
+            </View>
+          </View>
+
+          <View style={styles.creatorsContainer}>
+            <Text style={styles.sectionTitle}>Criadores:</Text>
+            {selectedCar.creators.map((creator, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.creatorCard}
+                onPress={() => handleCreatorPress(creator)}
+              >
+                <Image 
+                  source={{ uri: creator.image }} 
+                  style={styles.creatorImage}
+                />
+                <View style={styles.creatorInfo}>
+                  <Text style={styles.creatorName}>{creator.name}</Text>
+                  <Text style={styles.creatorRole}>{creator.role}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Substitui a versão original pelo VersionPicker */}
+          <VersionPicker versions={selectedCar.version} />
+        </ScrollView>
+      )}
+    </SafeAreaView>
     );
   };
-
+  
   const styles = StyleSheet.create({
-    carCard: {
-      padding: 10,
-      margin: 10,
-      backgroundColor: '#f0f0f0',
-      borderRadius: 10,
+    //Estilo do container principal
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+    },
+    //Estilo do container de loading
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
       alignItems: 'center',
     },
-    carImage: {
-      width: 200,
-      height: 150,
-      borderRadius: 10,
+    // Estilo do container da tela principal 
+    mainContainer: {
+      flex: 1,
+      padding: 10,
     },
-    carName: {
+    
+    scrollContainer: {
+      paddingBottom: 20,
+    },
+    
+    filterContainer: {
+      backgroundColor: '#f8f9fa',
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 15,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    filterTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      marginTop: 5,
+      marginBottom: 10,
+      textAlign: 'center',
+      color: '#2c3e50',
+    },
+    sliderWrapper: {
+      marginBottom: 15,
+    },
+    sliderLabel: {
+      fontSize: 14,
+      color: '#7f8c8d',
+      marginBottom: 5,
+    },
+    slider: {
+      width: '100%',
+      height: 40,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginVertical: 10,
+      marginLeft: 10,
+      color: '#2c3e50',
+    },
+    carouselContainer: {
+      paddingHorizontal: 10,
+      paddingBottom: 10,
+    },
+    carouselCard: {
+      width: 200,
+      marginRight: 15,
+      borderRadius: 10,
+      backgroundColor: '#fff',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      overflow: 'hidden',
+    },
+    carouselImage: {
+      width: '100%',
+      height: 120,
+    },
+    carouselTextContainer: {
+      padding: 10,
+    },
+    carouselTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 5,
+    },
+    carouselSubtitle: {
+      fontSize: 14,
+      color: '#7f8c8d',
+    },
+    listContainer: {
+      paddingHorizontal: 10,
+      paddingBottom: 20,
+    },
+    carCard: {
+      flexDirection: 'row',
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      marginBottom: 15,
+      padding: 10,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    carImage: {
+      width: 100,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 10,
+    },
+    carInfo: {
+      flex: 1,
+    },
+    carName: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 5,
+    },
+    carText: {
+      fontSize: 14,
+      color: '#7f8c8d',
     },
     detailsButton: {
-      marginTop: 10,
-      padding: 10,
-      backgroundColor: 'gray',
+      backgroundColor: '#3498db',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
       borderRadius: 5,
     },
     detailsButtonText: {
-      color: 'white',
+      color: '#fff',
       fontWeight: 'bold',
     },
     backButton: {
-      margin: 10,
+      backgroundColor: '#7f8c8d',
       padding: 10,
-      backgroundColor: 'gray',
       borderRadius: 5,
+      margin: 10,
       alignSelf: 'flex-start',
     },
     backButtonText: {
-      color: 'white',
+      color: '#fff',
       fontWeight: 'bold',
     },
     carDetailsContainer: {
-      padding: 20,
-      alignItems: 'center',
+      padding: 15,
     },
     carDetailsImage: {
       width: '100%',
       height: 200,
       borderRadius: 10,
+      marginBottom: 15,
     },
     carDetailsName: {
       fontSize: 24,
       fontWeight: 'bold',
-      marginTop: 10,
+      marginBottom: 10,
+      color: '#2c3e50',
     },
     descriptionContainer: {
-      margin: 10,
-      padding: 10,
-      backgroundColor: '#f0f0f0',
+      backgroundColor: '#f8f9fa',
+      padding: 15,
       borderRadius: 10,
+      marginBottom: 15,
     },
     carDetailsDescription: {
       fontSize: 14,
-      textAlign: 'center',
+      lineHeight: 20,
+      color: '#34495e',
     },
     detailsContainer: {
-      margin: 10,
-      padding: 10,
-      backgroundColor: '#f0f0f0',
+      backgroundColor: '#f8f9fa',
+      padding: 15,
       borderRadius: 10,
-      width: '100%',
+      marginBottom: 15,
     },
-    carDetailsText: {
+    detailText: {
       fontSize: 16,
-      marginTop: 5,
+      marginBottom: 8,
+      color: '#34495e',
     },
     creatorsContainer: {
       margin: 10,
@@ -302,99 +609,204 @@
       backgroundColor: '#f0f0f0',
       borderRadius: 10,
     },
-    creatorsTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 10,
-    },
     creatorCard: {
       flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
-      backgroundColor: '#FFF',
-      padding: 10,
+      backgroundColor: '#fff',
       borderRadius: 10,
-      
-      
+      padding: 10,
+      marginBottom: 10,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     creatorImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 25, // Imagem redonda na primeira página
+      width: 60,
+      height: 60,
+      borderRadius: 30,
       marginRight: 10,
     },
     creatorInfo: {
       flex: 1,
-      width: '70%',
+       width: '70%',
       alignSelf:'center'
     },
     creatorName: {
       fontSize: 16,
       fontWeight: 'bold',
+      marginBottom: 5,
     },
     creatorRole: {
       fontSize: 14,
-      color: '#666',
+      color: '#7f8c8d',
     },
-    creatorCardDetails: {
-      padding: 20,
-      margin: 10,
-      backgroundColor: '#f0f0f0',
-      borderRadius: 10,
-      alignItems: 'center',
-    },
-    creatorImageDetails: {
-      width: '70%',
-      height: 300,
+    versionsContainer: {
+      paddingHorizontal: 15,
       marginBottom: 20,
-      borderRadius: 10,
-      // Imagem retangular na página de detalhes
     },
-    creatorName: {
+    versionCard: {
+      flexDirection: 'row',
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 10,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    versionImage: {
+      width: 80,
+      height: 60,
+      borderRadius: 8,
+      marginRight: 10,
+    },
+    versionInfo: {
+      flex: 1,
+    },
+    versionName: {
       fontSize: 16,
       fontWeight: 'bold',
+      marginBottom: 5,
     },
-    creatorRole: {
+    versionYear: {
       fontSize: 14,
-      color: '#666',
+      color: '#7f8c8d',
+    },
+    creatorCardDetails: {
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      padding: 20,
+      margin: 15,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    creatorImageDetails: {
+      width: '100%',
+      height: 250,
+      borderRadius: 10,
+      marginBottom: 15,
+    },
+    creatorResume: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: '#34495e',
+      marginBottom: 15,
     },
     infoBlock: {
-      marginTop: 20,
-      padding: 10,
-      backgroundColor: '#FFF',
+      backgroundColor: '#f8f9fa',
+      padding: 15,
       borderRadius: 10,
-      width: '100%',
+      marginBottom: 15,
     },
     infoText: {
-      fontSize: 16,
-      marginBottom: 10,
-      
+      fontSize: 14,
+      marginBottom: 5,
+      color: '#34495e',
     },
-  
-    cardsOuterContainer: {
-      marginTop: 20, // Espaço acima do container dos cards
-      paddingHorizontal: 10, // Margem horizontal
-      width: '100%', // Ocupa toda a largura
-    },
-    
-    
-    
-    cardsColunm: {
-      flexDirection: 'column'
-    }, 
 
     creatorCard2:{
-     
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 10,
       backgroundColor: '#FFF',
       padding: 10,
       borderRadius: 10,
-      width: '200%',
+      width: '100%',
       alignSelf:"center"
+    },
+    
+    creatorsTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    creatorText: {
+      marginBottom: 20,
+    },
+    header: {
+      backgroundColor: '#87ceeb', 
+      paddingVertical: 20,        // Mais espaçamento
+      shadowColor: '#000',        // Adicionar sombra
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    headerTitle: {
+      fontSize: 25,              // Tamanho maior
+      fontWeight: '800',         // Negrito mais forte
+      justifyContent: 'center',
+      alignItems: 'center',
+      display: 'flex'
+    },
+    filterPickerContainer: {
+      margin: 15,
+      backgroundColor: '#f8f9fa',
+      borderRadius: 10,
+      overflow: 'hidden',
+    },
+    picker: {
+      width: '100%',
+      backgroundColor: '#fff',
+    },
+    subPicker: {
+      width: '100%',
+      backgroundColor: '#f0f0f0',
+      borderTopWidth: 1,
+      borderTopColor: '#e0e0e0',
+    },
+    versionPickerContainer: {
+      margin: 15,
+      padding: 15,
+      backgroundColor: '#f8f9fa',
+      borderRadius: 10,
+    },
+    versionPickerLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 10,
+      color: '#2c3e50',
+    },
+    pickerWrapper: {
+      borderWidth: 1,
+      borderColor: '#ddd',
+      borderRadius: 8,
+      overflow: 'hidden',
+      marginBottom: 15,
+    },
+    versionPicker: {
+      width: '100%',
+      backgroundColor: '#fff',
+    },
+    selectedVersionContainer: {
+      alignItems: 'center',
+      padding: 10,
+    },
+    selectedVersionImage: {
+      width: '100%',
+      height: 150,
+      borderRadius: 8,
+      marginBottom: 10,
+    },
+    selectedVersionName: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginTop: 5,
+    },
+    selectedVersionYear: {
+      fontSize: 16,
+      color: '#7f8c8d',
+    },
 
-    }
+    
   });
-
-  export default App; 
+  
+  export default App;
