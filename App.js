@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
+import { Poppins_400Regular } from '@expo-google-fonts/poppins';
 
 
 const App = () => {
@@ -752,7 +753,9 @@ const VersionPicker = ({ versions }) => {
       fontSize: 25,
       fontWeight: '800',
       textAlign: 'center', // Isso centraliza o texto dentro do próprio componente
-      marginTop: '20  '
+      marginTop: '20  ',
+      fontWeight: 'italic',
+      fontFamily: 'Poppins_400Regular'
     },
     
     filterPickerContainer: {
