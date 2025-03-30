@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { useFonts, Poppins_400Regular } from '@expo-google-fonts/poppins';
-
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -13,10 +12,98 @@ const App = () => {
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [yearRange, setYearRange] = useState([1978, 2012]);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [filterValue, setFilterValue] = useState('');
   const scrollRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [language, setLanguage] = useState('pt'); // Estado para o idioma selecionado
 
-  
+  // Objeto com todas as traduções
+  const translations = {
+    pt: {
+      welcome: 'Bem-vindo a',
+      back: 'Voltar',
+      details: 'Detalhes',
+      yearFilter: 'Filtrar por Ano',
+      min: 'Mínimo',
+      max: 'Máximo',
+      highlights: 'Destaques',
+      allModels: 'Todos os Modelos',
+      creators: 'Criadores',
+      selectVersion: 'Selecione uma versão',
+      allCars: 'Todos os carros',
+      byManufacturer: 'Por Fabricante',
+      byTransmission: 'Por Tipo de Câmbio',
+      byFuel: 'Por Combustível',
+      byColor: 'Por Cor',
+      selectManufacturer: 'Selecione o fabricante',
+      selectTransmission: 'Selecione o câmbio',
+      selectFuel: 'Selecione o combustível',
+      year: 'Ano',
+      color: 'Cor',
+      value: 'Valor',
+      km: 'KM',
+      transmission: 'Câmbio',
+      fuel: 'Combustível',
+      recommended: 'Recomendados',
+    },
+    en: {
+      welcome: 'Welcome to',
+      back: 'Back',
+      details: 'Details',
+      yearFilter: 'Filter by Year',
+      min: 'Min',
+      max: 'Max',
+      highlights: 'Highlights',
+      allModels: 'All Models',
+      creators: 'Creators',
+      selectVersion: 'Select a version',
+      allCars: 'All cars',
+      byManufacturer: 'By Manufacturer',
+      byTransmission: 'By Transmission Type',
+      byFuel: 'By Fuel Type',
+      byColor: 'By Color',
+      selectManufacturer: 'Select manufacturer',
+      selectTransmission: 'Select transmission',
+      selectFuel: 'Select fuel',
+      year: 'Year',
+      color: 'Color',
+      value: 'Value',
+      km: 'KM',
+      transmission: 'Transmission',
+      fuel: 'Fuel',
+      recommended: 'Recommended',
+    },
+    jp: {
+      welcome: 'ようこそ',
+      back: '戻る',
+      details: '詳細',
+      yearFilter: '年でフィルタリング',
+      min: '最小',
+      max: '最大',
+      highlights: 'ハイライト',
+      allModels: 'すべてのモデル',
+      creators: 'クリエーター',
+      selectVersion: 'バージョンを選択',
+      allCars: 'すべての車',
+      byManufacturer: 'メーカー別',
+      byTransmission: 'トランスミッションタイプ別',
+      byFuel: '燃料タイプ別',
+      byColor: '色別',
+      selectManufacturer: 'メーカーを選択',
+      selectTransmission: 'トランスミッションを選択',
+      selectFuel: '燃料を選択',
+      year: '年',
+      color: '色',
+      value: '価値',
+      km: 'キロメートル',
+      transmission: 'トランスミッション',
+      fuel: '燃料',
+      recommended: 'おすすめ',
+    },
+  };
+
+  // Obter a tradução atual baseada no idioma selecionado
+  const t = (key) => translations[language][key] || key;
 
     const cars = [
       {
@@ -29,6 +116,7 @@ const App = () => {
         KM: '133.000',
         exchange: 'Manual',
         fuel: 'Gasolina',
+        hp:'110',
         description: 'O Volkswagen Fusca, ícone automotivo no Brasil, é famoso por sua forma arredondada semelhante a um besouro. Caracteriza-se pelo motor traseiro refrigerado a ar, design simples e durável, e espaço para quatro passageiros. Com seus faróis redondos e excelente economia de combustível, o Fusca ganhou popularidade por sua confiabilidade e facilidade de manutenção. Produzido no Brasil até 1996, tornou-se símbolo de acessibilidade, permitindo que muitas famílias adquirissem seu primeiro carro. Sua influência vai além do transporte, marcando gerações e se tornando parte da cultura brasileira.',
         creators: [
           { name: 'Ferdinand Porsche', secondname: 'Renault', secondrole: 'Fabricante', role: 'Designer', gender: 'Masculino', birthDate: '03-09-1875', birthPlace: 'Maffersdorf, Império Austro-Húngaro', Resume: 'Ferdinand Porsche (1875–1951) foi um engenheiro automotivo austríaco conhecido por fundar a Porsche AG e projetar o Volkswagen Fusca, um dos carros mais populares da história. Também trabalhou em projetos militares, incluindo o tanque Tiger durante a Segunda Guerra Mundial.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Ferdinand_Porsche.jpg/300px-Ferdinand_Porsche.jpg', secondimage: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRaDXBLMTY3kYQsZJ71Jbc9S1cGOkOol9vRLw&s', },
@@ -51,6 +139,7 @@ const App = () => {
         KM: '586.067',
         exchange: 'Manual',
         fuel: 'Gasolina e álcool',
+        hp: '250',
         description: 'O Volkswagen Gol, um dos carros mais vendidos na história do Brasil, é conhecido por sua versatilidade e praticidade. Lançado em 1980 como sucessor do Fusca, o Gol se destaca por seu design compacto e moderno, com linhas mais retas e aerodinâmicas. Equipado com motor dianteiro e tração dianteira, oferece boa dirigibilidade e economia de combustível. O Gol é apreciado por seu interior espaçoso para um carro compacto, conforto razoável e baixo custo de manutenção. Ao longo de suas várias gerações, evoluiu em termos de tecnologia e segurança, mantendo-se como uma opção popular para famílias e jovens motoristas. Sua robustez e adaptabilidade às condições das estradas brasileiras contribuíram para seu sucesso duradouro no mercado automobilístico nacional.',
         creators: [
           { name: 'Luiz Alberto Veiga', role: 'Designer', secondname: 'Hyundai', secondrole: 'Fabricante', gender:'Masculino',  birthDate: '05-06-1953', birthPlace: 'São Paulo, Brasil', Resume: 'Luiz Alberto Veiga (nascido em 1953, São Paulo) é um designer brasileiro conhecido por seu trabalho na Volkswagen, onde projetou carros icônicos como o Volkswagen Gol e o Fox. Ele é renomado por sua inovação e impacto na indústria automotiva.', image: 'https://autoentusiastas.com.br/ae/wp-content/uploads/2018/12/LuizAlbertoVeiga-46-160x160.jpg', secondimage:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdhLmdOrerhIByifpFFC0nNeeQIoP2Bpq-Ww&s', },
@@ -73,6 +162,7 @@ const App = () => {
         KM: '149.000',
         exchange: 'Manual',
         fuel: 'Gasolina e álcool', 
+        hp: '352',
         description: 'O Fiat Punto é um hatchback compacto que se destacou no mercado automobilístico por seu design elegante e europeu. Lançado originalmente na Europa em 1993 e introduzido no Brasil em 2007, o Punto oferece uma combinação de estilo, eficiência e praticidade. Caracteriza-se por suas linhas arredondadas e modernas, faróis expressivos e grade dianteira distintiva. O interior é relativamente espaçoso para sua categoria, com acabamento de qualidade e bom nível de equipamentos. Disponível em versões hatch e aventureira (Punto Adventure), o modelo se destaca pela boa dirigibilidade, conforto de rodagem e opções de motores econômicos. Embora tenha saído de linha no Brasil em 2018, o Punto deixou sua marca como uma alternativa sofisticada no segmento de compactos, apreciado por consumidores que buscavam um veículo com toque italiano e bom custo-benefício.',
         creators: [
           {name: 'Giorgetto Giugiaro', role: 'Designer', secondname: 'Chevrolet', secondrole: 'Fabricante', gender: 'Masculino' ,  birthDate: '07-08-1938', birthPlace:'Garessio, Itália',  Resume:'Giorgetto Giugiaro (nascido em 1938, Itália) é um designer de automóveis italiano considerado um dos mais influentes da história. Fundou a Italdesign e criou modelos icônicos como o Volkswagen Golf, DeLorean DMC-12 e Fiat Panda.', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/GiorgettoGiugiaro_%28cropped%29.jpg/450px-GiorgettoGiugiaro_%28cropped%29.jpg', secondimage: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRORVryOFGGSDgS-0sjODhpjwdCMljwwKxyPQ&s',},
@@ -86,7 +176,7 @@ const App = () => {
 
       }
     ];
-
+   
     //Filtra os carros com base no intervalo de anos e filtros selecionado
     const filteredCars = cars.filter(car => {
       const yearMatch = car.year >= yearRange[0] && car.year <= yearRange[1];
@@ -115,72 +205,13 @@ const App = () => {
       setSelectedCreator(creator);
     };
   
-
- // Componente de Picker para Filtros
- const AdvancedFilterPicker = () => {
-  return (
-    <View style={styles.filterPickerContainer}>
-      <Picker
-        selectedValue={selectedFilter}
-        onValueChange={(itemValue) => {
-          setSelectedFilter(itemValue);
-          setFilterValue('');
-        }}
-        style={styles.picker}
-        dropdownIconColor="#3498db"
-      >
-        <Picker.Item label="Todos os carros" value="all" />
-        <Picker.Item label="Por Fabricante" value="manufacturer" />
-        <Picker.Item label="Por Tipo de Câmbio" value="transmission" />
-        <Picker.Item label="Por Combustível" value="fuel" />
-        <Picker.Item label="Por Cor" value="color" />
-      </Picker>
-
-      {selectedFilter === 'manufacturer' && (
-        <Picker
-          selectedValue={filterValue}
-          onValueChange={setFilterValue}
-          style={styles.subPicker}
-        >
-          <Picker.Item label="Selecione o fabricante" value="" />
-          <Picker.Item label="Volkswagen" value="volkswagen" />
-          <Picker.Item label="Fiat" value="fiat" />
-        </Picker>
-      )}
-
-      {selectedFilter === 'transmission' && (
-        <Picker
-          selectedValue={filterValue}
-          onValueChange={setFilterValue}
-          style={styles.subPicker}
-        >
-          <Picker.Item label="Selecione o câmbio" value="" />
-          <Picker.Item label="Manual" value="manual" />
-        </Picker>
-      )}
-
-      {selectedFilter === 'fuel' && (
-        <Picker
-          selectedValue={filterValue}
-          onValueChange={setFilterValue}
-          style={styles.subPicker}
-        >
-          <Picker.Item label="Selecione o combustível" value="" />
-          <Picker.Item label="Gasolina" value="gasolina" />
-          <Picker.Item label="Flex" value="flex" />
-        </Picker>
-      )}
-    </View>
-  );
-};
-
 // Componente de Picker para Versões
-const VersionPicker = ({ versions }) => {
+const VersionPicker = ({ versions, t }) => {
   const [selectedVersion, setSelectedVersion] = useState(versions[0]);
 
   return (
     <View style={styles.versionPickerContainer}>
-      <Text style={styles.versionPickerLabel}>Selecione uma versão:</Text>
+      <Text style={styles.versionPickerLabel}>{t('selectVersion')}:</Text>
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={selectedVersion}
@@ -203,7 +234,7 @@ const VersionPicker = ({ versions }) => {
           source={{ uri: selectedVersion.image }} 
           style={styles.selectedVersionImage}
         />
-        <Text style={styles.selectedVersionName}>{selectedVersion.name}</Text>
+        <Text style={styles.selectedVersionName}>{selectedVersion.name}</Text>  
         <Text style={styles.selectedVersionYear}>{selectedVersion.year}</Text>
       </View>
     </View>
@@ -220,21 +251,36 @@ const VersionPicker = ({ versions }) => {
     }
   
     return (
-    
       <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>WikCar</Text>
-      </View>
-      
+     {!selectedCar && !selectedCreator && (
+        <View style={styles.header}>      
+          <View style={styles.languageSelectorContainer}>
+            <Picker
+              selectedValue={language}
+              onValueChange={(itemValue) => setLanguage(itemValue)}
+              style={styles.languagePicker}
+              dropdownIconColor="#3498db"
+              mode="dropdown" //adiciona um estilo dropdown
+            >
+              <Picker.Item label="Português" value="pt" />
+              <Picker.Item label="English" value="en" />
+              <Picker.Item label="日本語" value="jp" />
+            </Picker>
+          </View>         
+          <Text style={styles.headerTitle}>{t('welcome')} WikCar</Text>    
+        </View>
+     )}
+
+
       {/* Tela de detalhes do criador */}
       
+       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       {selectedCreator ? (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.creatorCardDetails}>
-            <TouchableOpacity style={styles.backButton} onPress={() => setSelectedCreator(null)}>
-              <Text style={styles.backButtonText}>Voltar</Text>
-            </TouchableOpacity>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.creatorCardDetails}>
+              <TouchableOpacity style={styles.backButton} onPress={() => setSelectedCreator(null)}>
+                <Text style={styles.backButtonText}>{t('back')}</Text>
+              </TouchableOpacity>
             <Image 
               source={{ uri: selectedCreator.image }} 
               style={styles.creatorImageDetails}
@@ -259,7 +305,7 @@ const VersionPicker = ({ versions }) => {
             )}
             
             <View style={styles.creatorsContainer}>
-              <Text style={styles.creatorsTitle}>Recomendados: </Text>
+                <Text style={styles.creatorsTitle}>{t('recommended')}: </Text>
               {selectedCar.creators.map((creator, index) => (
                 <View style={styles.creatorCard2} key={index}>
                   <Image source={{ uri: creator.secondimage }} style={styles.creatorImage} />
@@ -272,14 +318,12 @@ const VersionPicker = ({ versions }) => {
             </View>
           </View>
         </ScrollView>
-      ) : !selectedCar ? (
-        // Tela principal com lista de carros 
+       ) : !selectedCar ? (
         <View style={styles.mainContainer}>
-          {/* Filtro por Ano */}
           <View style={styles.filterContainer}>
-            <Text style={styles.filterTitle}>Filtrar por Ano: {yearRange[0]} - {yearRange[1]}</Text>
+            <Text style={styles.filterTitle}>{t('yearFilter')}: {yearRange[0]} - {yearRange[1]}</Text>
             <View style={styles.sliderWrapper}>
-              <Text style={styles.sliderLabel}>Mínimo: {yearRange[0]}</Text>
+              <Text style={styles.sliderLabel}>{t('min')}: {yearRange[0]}</Text>
               <Slider
                 style={styles.slider}
                 minimumValue={1978}
@@ -293,7 +337,7 @@ const VersionPicker = ({ versions }) => {
               />
             </View>
             <View style={styles.sliderWrapper}>
-              <Text style={styles.sliderLabel}>Máximo: {yearRange[1]}</Text>
+              <Text style={styles.sliderLabel}>{t('max')} {yearRange[1]}</Text>
               <Slider
                 style={styles.slider}
                 minimumValue={1978}
@@ -309,10 +353,10 @@ const VersionPicker = ({ versions }) => {
           </View>
 
           {/* Filtros Avançados */}
-          <AdvancedFilterPicker />
+          
 
           {/* Carrossel Horizontal */}
-          <Text style={styles.sectionTitle}>Destaques</Text>
+          <Text style={styles.sectionTitle}>{t('highlights')}</Text>
           <ScrollView
             horizontal
             ref={scrollRef}
@@ -340,7 +384,7 @@ const VersionPicker = ({ versions }) => {
           </ScrollView>
 
           {/* Lista Vertical completa de carros*/}
-          <Text style={styles.sectionTitle}>Todos os Modelos</Text>
+          <Text style={styles.sectionTitle}>{t('allModels')}</Text>
           <ScrollView contentContainerStyle={styles.listContainer}>
             {filteredCars.map((car) => (
               <TouchableOpacity 
@@ -355,14 +399,14 @@ const VersionPicker = ({ versions }) => {
                 />
                 <View style={styles.carInfo}>
                   <Text style={styles.carName}>{car.name}</Text>
-                  <Text style={styles.carText}>Ano: {car.year}</Text>
-                  <Text style={styles.carText}>Cor: {car.color}</Text>
+                  <Text style={styles.carText}>{t('year')}: {car.year}</Text>
+                  <Text style={styles.carText}>{t('color')}: {car.color}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.detailsButton}
                   onPress={() => handleDetailsPress(car)}
                 >
-                  <Text style={styles.detailsButtonText}>Detalhes</Text>
+                  <Text style={styles.detailsButtonText}>{t('details')}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -371,9 +415,9 @@ const VersionPicker = ({ versions }) => {
       ) : (
         // Tela de detalhes do carro
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <Text style={styles.backButtonText}>Voltar</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+              <Text style={styles.backButtonText}>{t('back')}</Text>
+            </TouchableOpacity>
 
           <View style={styles.carDetailsContainer}>
             <Image 
@@ -388,17 +432,17 @@ const VersionPicker = ({ versions }) => {
             </View>
 
             <View style={styles.detailsContainer}>
-              <Text style={styles.detailText}>Ano: {selectedCar.year}</Text>
-              <Text style={styles.detailText}>Cor: {selectedCar.color}</Text>
-              <Text style={styles.detailText}>Valor: {selectedCar.value}</Text>
-              <Text style={styles.detailText}>KM: {selectedCar.KM}</Text>
-              <Text style={styles.detailText}>Câmbio: {selectedCar.exchange}</Text>
-              <Text style={styles.detailText}>Combustível: {selectedCar.fuel}</Text>
+              <Text style={styles.detailText}>{t('year')}: {selectedCar.year}</Text>
+              <Text style={styles.detailText}>{t('color')}: {selectedCar.color}</Text>
+              <Text style={styles.detailText}>{t('value')}: {selectedCar.value}</Text>
+              <Text style={styles.detailText}>{t('km')}: {selectedCar.KM}</Text>
+              <Text style={styles.detailText}>{t('transmission')}: {selectedCar.exchange}</Text>
+              <Text style={styles.detailText}>{t('fuel')}: {selectedCar.fuel}</Text>
             </View>
           </View>
 
           <View style={styles.creatorsContainer}>
-            <Text style={styles.sectionTitle}>Criadores:</Text>
+              <Text style={styles.sectionTitle}>{t('creators')}:</Text>
             {selectedCar.creators.map((creator, index) => (
               <TouchableOpacity 
                 key={index} 
@@ -418,7 +462,7 @@ const VersionPicker = ({ versions }) => {
           </View>
 
           {/* Substitui a versão original pelo VersionPicker */}
-          <VersionPicker versions={selectedCar.version} />
+          <VersionPicker versions={selectedCar.version} t={t} />
         </ScrollView>
       )}
       </ScrollView>
@@ -818,6 +862,18 @@ const VersionPicker = ({ versions }) => {
     selectedVersionYear: {
       fontSize: 16,
       color: '#7f8c8d',
+    },
+    languageSelectorContainer: {
+      width: '80%',
+      backgroundColor: 'white',
+      borderRadius: 20,
+      marginTop: 5,
+      elevation: 10,
+      alignSelf: 'center',
+    },
+    languagePicker: {
+      height: 52,
+      width: '100%',
     },
 
     
